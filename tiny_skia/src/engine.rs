@@ -505,6 +505,26 @@ impl Engine {
                     clip_mask,
                 );
             }
+            Primitive::Clip { bounds, primitives } => {
+                let Some(physical_bounds) = (*bounds * transformation).intersection(&clip_bounds)
+                else {
+                    return;
+                };
+
+                adjust_clip_mask(clip_mask, physical_bounds);
+
+                for primitive in primitives {
+                    self.draw_primitive(
+                        primitive,
+                        transformation,
+                        pixels,
+                        clip_mask,
+                        physical_bounds,
+                    );
+                }
+
+                adjust_clip_mask(clip_mask, clip_bounds);
+            }
         }
     }
 

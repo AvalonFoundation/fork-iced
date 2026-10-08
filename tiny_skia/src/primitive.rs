@@ -20,6 +20,13 @@ pub enum Primitive {
         /// The stroke settings.
         stroke: tiny_skia::Stroke,
     },
+    /// A group of primitives clipped to some bounds.
+    Clip {
+        /// The bounds to clip to.
+        bounds: Rectangle,
+        /// The primitives to clip.
+        primitives: Vec<Primitive>,
+    },
 }
 
 impl Primitive {
@@ -28,6 +35,14 @@ impl Primitive {
         let bounds = match self {
             Primitive::Fill { path, .. } => path.bounds(),
             Primitive::Stroke { path, .. } => path.bounds(),
+            Primitive::Clip { bounds, primitives } => {
+                return primitives
+                    .iter()
+                    .map(Primitive::visible_bounds)
+                    .reduce(|a, b| a.union(&b))
+                    .and_then(|visible_bounds| visible_bounds.intersection(bounds))
+                    .unwrap_or_default();
+            }
         };
 
         Rectangle {
